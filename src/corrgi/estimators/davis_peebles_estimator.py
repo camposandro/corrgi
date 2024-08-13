@@ -38,6 +38,8 @@ class DavisPeeblesEstimator(Estimator):
                 left_catalog_path=right_catalog_path,
                 right_catalog_path=left_catalog_path,
                 correlation=self.correlation,
+                output_path=self.output_dir,
+                output_artifact_name="cd",
             )
         )
         counts_cr = run_pipeline(
@@ -45,6 +47,8 @@ class DavisPeeblesEstimator(Estimator):
                 left_catalog_path=right_catalog_path,
                 right_catalog_path=random_catalog_path,
                 correlation=self.correlation,
+                output_path=self.output_dir,
+                output_artifact_name="cr",
             )
         )
         return self.correlation.transform_counts([counts_cd, counts_cr])

@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, List
 
 import gundam.cflibfor as cff
 import numpy as np
@@ -6,9 +6,8 @@ import pandas as pd
 from astropy.cosmology import LambdaCDM
 from gundam import gundam
 from hipscat.catalog.catalog_info import CatalogInfo
-from lsdb import Catalog
 from munch import Munch
-
+import hipscat as hc
 from corrgi.correlation.correlation import Correlation
 
 
@@ -27,12 +26,14 @@ class ProjectedCorrelation(Correlation):
         self.sepp, self.sepv = self.make_bins()
         self.cosmo = LambdaCDM(H0=params.h0, Om0=params.omegam, Ode0=params.omegal)
 
-    def validate(self, catalogs: list[Catalog]):
+    def validate(self, hc_catalogs: List[hc.catalog.Catalog]):
         """Validate that the correlation args/data are valid"""
-        super().validate(catalogs)
-        for catalog in catalogs:
-            if self.redshift_column not in catalog.columns:
-                raise ValueError(f"Redshift column {self.redshift_column} not found in {catalog}")
+        super().validate(hc_catalogs)
+        for catalog in hc_catalogs:
+            if catalog.schema.field_by_name(self.redshift_column) is None:
+                raise ValueError(
+                    f"Redshift column {self.redshift_column} does not exist in {catalog.catalog_info.catalog_name}"
+                )
 
     def make_bins(self) -> tuple[list]:
         """Generate bins of projected separation and LOS for the correlation"""

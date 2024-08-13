@@ -1,3 +1,4 @@
+import hipscat as hc
 from dataclasses import dataclass
 
 from hipscat.io import FilePointer
@@ -22,3 +23,18 @@ class CorrgiArguments(RuntimeArguments):
     delete_resume_log_files: bool = False
     """should we delete task-level done files once each stage is complete?
     if False, we will keep all done marker files at the end of the pipeline."""
+
+    def __post_init__(self):
+        self._check_arguments()
+
+    def _check_arguments(self):
+        super()._check_arguments()
+
+        # Make sure PosixPaths are converted to strings
+        self.left_catalog_path = str(self.left_catalog_path)
+        self.right_catalog_path = str(self.right_catalog_path)
+
+        # Load catalogs and verify their metadata
+        self.left_hc_catalog = hc.read_from_hipscat(self.left_catalog_path)
+        self.right_hc_catalog = hc.read_from_hipscat(self.right_catalog_path)
+        self.correlation.validate([self.left_hc_catalog, self.right_hc_catalog])

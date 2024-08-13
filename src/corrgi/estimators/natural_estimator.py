@@ -25,19 +25,19 @@ class NaturalEstimator(Estimator):
         """
         counts_dd = run_pipeline(
             CorrgiArguments(
-                left_catalog_path=str(catalog_path),
-                right_catalog_path=str(catalog_path),
+                left_catalog_path=catalog_path,
+                right_catalog_path=catalog_path,
                 correlation=self.correlation,
-                output_path=catalog_path,  # TODO: change
+                output_path=self.output_dir,
                 output_artifact_name="dd",
             )
         )
         counts_rr = run_pipeline(
             CorrgiArguments(
-                left_catalog_path=str(random_catalog_path),
-                right_catalog_path=str(random_catalog_path),
+                left_catalog_path=random_catalog_path,
+                right_catalog_path=random_catalog_path,
                 correlation=self.correlation,
-                output_path=catalog_path,  # TODO: change
+                output_path=self.output_dir,
                 output_artifact_name="rr",
             )
         )

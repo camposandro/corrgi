@@ -1,7 +1,27 @@
 from collections import defaultdict
 from typing import List, Tuple
-
+import hipscat as hc
 from hipscat.pixel_math import HealpixPixel
+from lsdb.dask.merge_catalog_functions import get_healpix_pixels_from_alignment
+
+from corrgi.alignment import autocorrelation_alignment, crosscorrelation_alignment
+
+
+def get_auto_file_alignment(catalog: hc.catalog.Catalog):
+    """Returns the auto and cross pairs for a single catalog"""
+    alignment = autocorrelation_alignment(catalog)
+    auto_pixels = [pixel for pixel in catalog.get_healpix_pixels()]
+    cross_pixels = get_healpix_pixels_from_alignment(alignment)
+    cross_pixels = get_groups_by_left_pixel(cross_pixels)
+    return auto_pixels, cross_pixels
+
+
+def get_cross_file_alignment(left_hc_catalog: hc.catalog.Catalog, right_hc_catalog: hc.catalog.Catalog):
+    """Returns the cross pairs for two catalogs"""
+    alignment = crosscorrelation_alignment(left_hc_catalog, right_hc_catalog)
+    cross_pixels = get_healpix_pixels_from_alignment(alignment)
+    cross_pixels = get_groups_by_left_pixel(cross_pixels)
+    return {}, cross_pixels
 
 
 def get_auto_pixel_keys(hp_pixels) -> dict[HealpixPixel, str]:

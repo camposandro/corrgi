@@ -15,8 +15,9 @@ from corrgi.utils import read_catalog_total_rows
 class Estimator(ABC):
     """Estimator base class"""
 
-    def __init__(self, correlation: Correlation):
+    def __init__(self, correlation: Correlation, output_dir: FilePointer):
         self.correlation = correlation
+        self.output_dir = output_dir
 
     def compute_auto_estimate(
         self, catalog_path: FilePointer, random_catalog_path: FilePointer

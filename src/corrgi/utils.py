@@ -55,6 +55,6 @@ def read_catalog_total_rows(catalog_base_dir: FilePointer) -> int:
     Returns:
         The number of rows in the catalog.
     """
-    common_metadata_fp = hc.io.get_common_metadata_pointer(catalog_base_dir)
-    common_metadata = hc.io.file_io.read_parquet_metadata(common_metadata_fp)
-    return common_metadata.num_rows
+    metadata_fp = hc.io.get_parquet_metadata_pointer(catalog_base_dir)
+    metadata = hc.io.file_io.read_parquet_metadata(metadata_fp)
+    return metadata.num_rows

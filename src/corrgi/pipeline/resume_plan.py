@@ -6,21 +6,19 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Tuple
 
-import hipscat as hc
 from hipscat.io import file_io
 from hipscat.pixel_math import HealpixPixel
 from hipscat_import.pipeline_resume_plan import PipelineResumePlan
-from lsdb.dask.merge_catalog_functions import get_healpix_pixels_from_alignment
 
-from corrgi.alignment import crosscorrelation_alignment, autocorrelation_alignment
 from corrgi.pipeline.arguments import CorrgiArguments
 from corrgi.pipeline.utils import (
     get_cross_pixel_keys,
     get_auto_pixel_keys,
-    get_groups_by_left_pixel,
     filter_auto_pixel_keys,
     filter_cross_pixel_keys,
     get_pixel_key,
+    get_cross_file_alignment,
+    get_auto_file_alignment,
 )
 
 
@@ -36,7 +34,6 @@ class CorrgiResumePlan(PipelineResumePlan):
     MAPPING_STAGE = "mapping"
     MAPPING_STAGE_AUTO = "mapping_auto"
     MAPPING_STAGE_CROSS = "mapping_cross"
-
     REDUCING_STAGE = "reducing"
 
     def __init__(self, args: CorrgiArguments):
@@ -58,6 +55,7 @@ class CorrgiResumePlan(PipelineResumePlan):
         """Initialize the plan."""
         with self.print_progress(total=4, stage_name="Planning") as step_progress:
             super().safe_to_resume()
+
             mapping_done = self.is_mapping_done()
             reducing_done = self.is_reducing_done()
             if reducing_done and (not mapping_done):
@@ -70,46 +68,22 @@ class CorrgiResumePlan(PipelineResumePlan):
             step_progress.update(1)
 
             # Read the HiPSCat catalog's information
-            self.left_hc_catalog = hc.read_from_hipscat(args.left_catalog_path)
-            self.right_hc_catalog = hc.read_from_hipscat(args.right_catalog_path)
-
             self.auto_pixels, self.cross_pixels = (
-                self.get_auto_file_alignment()
+                get_auto_file_alignment(args.left_hc_catalog)
                 if args.left_catalog_path == args.right_catalog_path
-                else self.get_cross_file_alignment()
+                else get_cross_file_alignment(args.left_hc_catalog, args.right_hc_catalog)
             )
 
             step_progress.update(1)
 
             # Create the directories for the mapping stage
-            self.create_intermediate_dirs()
+            for pixel in args.left_hc_catalog.get_healpix_pixels():
+                file_io.make_directory(
+                    file_io.append_paths_to_pointer(self.tmp_path, self.MAPPING_STAGE, get_pixel_key(pixel)),
+                    exist_ok=True,
+                )
 
             step_progress.update(1)
-
-    def get_auto_file_alignment(self):
-        """Returns the auto and cross pairs for a single catalog"""
-        alignment = autocorrelation_alignment(self.left_hc_catalog)
-        auto_pixels = [pixel for pixel in self.left_hc_catalog.get_healpix_pixels()]
-        cross_pixels = get_healpix_pixels_from_alignment(alignment)
-        cross_pixels = get_groups_by_left_pixel(cross_pixels)
-        return auto_pixels, cross_pixels
-
-    def get_cross_file_alignment(
-        self,
-    ) -> Tuple[dict[HealpixPixel, str], Tuple[List[HealpixPixel], List[HealpixPixel]]]:
-        """Returns the cross pairs for two catalogs"""
-        alignment = crosscorrelation_alignment(self.left_hc_catalog, self.right_hc_catalog)
-        cross_pixels = get_healpix_pixels_from_alignment(alignment)
-        cross_pixels = get_groups_by_left_pixel(cross_pixels)
-        return [], cross_pixels
-
-    def create_intermediate_dirs(self):
-        # Create a directory for each pixel on the left for the mapping step
-        for pixel in self.left_hc_catalog.get_healpix_pixels():
-            file_io.make_directory(
-                file_io.append_paths_to_pointer(self.tmp_path, self.MAPPING_STAGE, get_pixel_key(pixel)),
-                exist_ok=True,
-            )
 
     def is_mapping_done(self) -> bool:
         """Are there sources left to count?"""
@@ -132,13 +106,13 @@ class CorrgiResumePlan(PipelineResumePlan):
         cls.touch_key_done_file(tmp_path, cls.MAPPING_STAGE, mapping_key)
 
     def get_remaining_map_auto_keys(self) -> dict[HealpixPixel, str]:
-        done_keys = set(self.read_done_keys(self.MAPPING_STAGE))
+        done_keys = set(self.read_done_mapping_keys())
         pixel_keys = get_auto_pixel_keys(self.auto_pixels)
         return filter_auto_pixel_keys(pixel_keys, done_keys)
 
     def get_remaining_map_cross_keys(self) -> dict[HealpixPixel, List[Tuple[HealpixPixel, str]]]:
         """{ HP(0,2): [(HP(0,3), Norder=0_Npix=3), ...], ... }"""
-        done_keys = set(self.read_done_keys(self.MAPPING_STAGE))
+        done_keys = set(self.read_done_mapping_keys())
         pixel_keys = get_cross_pixel_keys(self.cross_pixels)
         return filter_cross_pixel_keys(pixel_keys, done_keys)
 
@@ -192,16 +166,14 @@ class CorrgiResumePlan(PipelineResumePlan):
         file_io.make_directory(file_io.append_paths_to_pointer(tmp_path, cls.MAPPING_STAGE), exist_ok=True)
         return file_io.append_paths_to_pointer(tmp_path, cls.MAPPING_STAGE, f"{mapping_key}.npy")
 
-    def read_done_keys(self, stage_name):
+    def read_done_mapping_keys(self):
         """Inspect the stage's directory of done files, fetching the keys from done file names.
 
-        Args:
-            stage_name(str): name of the stage (e.g. mapping, reducing)
         Return:
             List[str] - all keys found in done directory
         """
         done_keys = []
-        stage_dir = file_io.append_paths_to_pointer(self.tmp_path, stage_name)
+        stage_dir = file_io.append_paths_to_pointer(self.tmp_path, self.MAPPING_STAGE)
         mapping_dirs = [
             content
             for content in file_io.get_directory_contents(stage_dir)

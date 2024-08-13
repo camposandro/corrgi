@@ -14,11 +14,16 @@ def test_acf_bins_are_correct(acf_bins_left_edges, acf_bins_right_edges, acf_par
 
 
 def test_acf_natural_counts_are_correct(
-    dask_client, data_catalog, rand_catalog, acf_dd_counts, acf_rr_counts, acf_params
+    dask_client,
+    data_catalog_dir,
+    rand_catalog_dir,
+    acf_dd_counts,
+    acf_rr_counts,
+    acf_params,
 ):
     estimator = NaturalEstimator(AngularCorrelation(params=acf_params))
     counts_dd, counts_rr, _ = estimator.compute_autocorrelation_counts(
-        data_catalog, rand_catalog
+        data_catalog_dir, rand_catalog_dir
     )
     npt.assert_allclose(counts_dd, acf_dd_counts, rtol=1e-3)
     npt.assert_allclose(counts_rr, acf_rr_counts, rtol=2e-3)

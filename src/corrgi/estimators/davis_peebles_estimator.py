@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import dask
 import numpy as np
-from lsdb import Catalog
+from hipscat.io import FilePointer
 
-from corrgi.dask import perform_cross_counts
+from corrgi.pipeline.arguments import CorrgiArguments
+from corrgi.pipeline.run_counting import run_pipeline
 from corrgi.estimators.estimator import Estimator
 
 
@@ -12,25 +12,39 @@ class DavisPeeblesEstimator(Estimator):
     """Davis-Peebles Estimator"""
 
     def compute_autocorrelation_counts(
-        self, catalog: Catalog, random: Catalog
+        self, catalog_path: FilePointer, random_catalog_path: FilePointer
     ) -> list[np.ndarray, np.ndarray, np.ndarray | int]:
         """Computes the auto-correlation counts for the provided catalog"""
         raise NotImplementedError()
 
     def compute_crosscorrelation_counts(
-        self, left: Catalog, right: Catalog, random: Catalog
+        self,
+        left_catalog_path: FilePointer,
+        right_catalog_path: FilePointer,
+        random_catalog_path: FilePointer,
     ) -> list[np.ndarray, np.ndarray]:
         """Computes the cross-correlation counts for the provided catalog.
 
         Args:
-            left (Catalog): A left galaxy samples catalog (D).
-            right (Catalog): A right galaxy samples catalog (C).
-            random (Catalog): A random samples catalog (R).
+            left_catalog_path (str): A left galaxy samples catalog (D).
+            right_catalog_path (str): A right galaxy samples catalog (C).
+            random_catalog_path (str): A random samples catalog (R).
 
         Returns:
             The CD and CR counts for the DP estimator.
         """
-        counts_cd = perform_cross_counts(right, left, self.correlation)
-        counts_cr = perform_cross_counts(right, random, self.correlation)
-        counts_cd_cr = dask.compute(*[counts_cd, counts_cr])
-        return self.correlation.transform_counts(counts_cd_cr)
+        counts_cd = run_pipeline(
+            CorrgiArguments(
+                left_catalog_path=right_catalog_path,
+                right_catalog_path=left_catalog_path,
+                correlation=self.correlation,
+            )
+        )
+        counts_cr = run_pipeline(
+            CorrgiArguments(
+                left_catalog_path=right_catalog_path,
+                right_catalog_path=random_catalog_path,
+                correlation=self.correlation,
+            )
+        )
+        return self.correlation.transform_counts([counts_cd, counts_cr])

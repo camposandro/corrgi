@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import dask
 import numpy as np
-from lsdb import Catalog
+from hipscat.io import FilePointer
 
-from corrgi.dask import perform_auto_counts
+from corrgi.pipeline.arguments import CorrgiArguments
+from corrgi.pipeline.run_counting import run_pipeline
 from corrgi.estimators.estimator import Estimator
 
 
@@ -12,26 +12,44 @@ class NaturalEstimator(Estimator):
     """Natural Estimator"""
 
     def compute_autocorrelation_counts(
-        self, catalog: Catalog, random: Catalog
+        self, catalog_path: FilePointer, random_catalog_path: FilePointer
     ) -> list[np.ndarray, np.ndarray, np.ndarray | int]:
         """Computes the auto-correlation counts for the provided catalog (`DD/RR - 1`).
 
         Args:
-            catalog (Catalog): A galaxy samples catalog (D).
-            random (Catalog): A random samples catalog (R).
+            catalog_path (str): A galaxy samples catalog (D).
+            random_catalog_path (str): A random samples catalog (R).
 
         Returns:
             The DD, RR and DR counts for the natural estimator.
         """
-        counts_dd = perform_auto_counts(catalog, self.correlation)
-        counts_rr = perform_auto_counts(random, self.correlation)
+        counts_dd = run_pipeline(
+            CorrgiArguments(
+                left_catalog_path=str(catalog_path),
+                right_catalog_path=str(catalog_path),
+                correlation=self.correlation,
+                output_path=catalog_path,  # TODO: change
+                output_artifact_name="dd",
+            )
+        )
+        counts_rr = run_pipeline(
+            CorrgiArguments(
+                left_catalog_path=str(random_catalog_path),
+                right_catalog_path=str(random_catalog_path),
+                correlation=self.correlation,
+                output_path=catalog_path,  # TODO: change
+                output_artifact_name="rr",
+            )
+        )
         counts_dr = 0  # The natural estimator does not use DR counts
-        counts_dd_rr = dask.compute(*[counts_dd, counts_rr])
-        counts_dd_rr = self.correlation.transform_counts(counts_dd_rr)
+        counts_dd_rr = self.correlation.transform_counts([counts_dd, counts_rr])
         return [*counts_dd_rr, counts_dr]
 
     def compute_crosscorrelation_counts(
-        self, left: Catalog, right: Catalog, random: Catalog
+        self,
+        left_catalog_path: FilePointer,
+        right_catalog_path: FilePointer,
+        random_catalog_path: FilePointer,
     ) -> list[np.ndarray, np.ndarray, np.ndarray]:
         """Computes the cross-correlation counts for the provided catalog"""
         raise NotImplementedError()

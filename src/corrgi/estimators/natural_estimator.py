@@ -30,6 +30,7 @@ class NaturalEstimator(Estimator):
                 correlation=self.correlation,
                 output_path=self.output_dir,
                 output_artifact_name="dd",
+                simple_progress_bar=True,
             )
         )
         counts_rr = run_pipeline(
@@ -39,6 +40,7 @@ class NaturalEstimator(Estimator):
                 correlation=self.correlation,
                 output_path=self.output_dir,
                 output_artifact_name="rr",
+                simple_progress_bar=True,
             )
         )
         counts_dr = 0  # The natural estimator does not use DR counts

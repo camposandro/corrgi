@@ -54,14 +54,16 @@ def run_counting(args, client):
 
 def get_autocorrelation_futures(args, resume_plan, client):
     auto_futures = []
+    correlation_future = client.scatter(args.correlation)
     for pixel, mapping_key in resume_plan.get_remaining_map_auto_keys().items():
         partition_file = paths.pixel_catalog_file(args.left_catalog_path, pixel.order, pixel.pixel)
         auto_futures.append(
             client.submit(
                 mr.map_pixel_auto_counts,
                 partition_file=partition_file,
-                catalog_info=args.left_hc_catalog.catalog_info,
-                correlation=args.correlation,
+                ra_column=args.left_hc_catalog.catalog_info.ra_column,
+                dec_column=args.left_hc_catalog.catalog_info.dec_column,
+                correlation=correlation_future,
                 mapping_key=mapping_key,
                 resume_path=resume_plan.tmp_path,
             )
@@ -71,6 +73,7 @@ def get_autocorrelation_futures(args, resume_plan, client):
 
 def get_crosscorrelation_futures(args, resume_plan, client):
     cross_futures = []
+    correlation_future = client.scatter(args.correlation)
     for left_pixel, (right_pixels, mapping_keys) in resume_plan.get_remaining_map_cross_keys().items():
         left_partition_file = paths.pixel_catalog_file(
             args.left_catalog_path, left_pixel.order, left_pixel.pixel
@@ -81,9 +84,11 @@ def get_crosscorrelation_futures(args, resume_plan, client):
                 mr.map_pixel_cross_counts,
                 left_partition_file=left_partition_file,
                 right_partition_files=right_partition_files,
-                left_catalog_info=args.left_hc_catalog.catalog_info,
-                right_catalog_info=args.right_hc_catalog.catalog_info,
-                correlation=args.correlation,
+                left_ra_column=args.left_hc_catalog.catalog_info.ra_column,
+                left_dec_column=args.left_hc_catalog.catalog_info.dec_column,
+                right_ra_column=args.right_hc_catalog.catalog_info.ra_column,
+                right_dec_column=args.right_hc_catalog.catalog_info.dec_column,
+                correlation=correlation_future,
                 mapping_keys=mapping_keys,
                 resume_path=resume_plan.tmp_path,
             )

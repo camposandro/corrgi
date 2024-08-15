@@ -40,6 +40,7 @@ class DavisPeeblesEstimator(Estimator):
                 correlation=self.correlation,
                 output_path=self.output_dir,
                 output_artifact_name="cd",
+                simple_progress_bar=True,
             )
         )
         counts_cr = run_pipeline(
@@ -49,6 +50,7 @@ class DavisPeeblesEstimator(Estimator):
                 correlation=self.correlation,
                 output_path=self.output_dir,
                 output_artifact_name="cr",
+                simple_progress_bar=True,
             )
         )
         return self.correlation.transform_counts([counts_cd, counts_cr])

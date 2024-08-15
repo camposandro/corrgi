@@ -11,6 +11,6 @@ def test_count_auto_pairs(
 ):
     data_catalog = hipscat.read_from_hipscat(data_catalog_dir)
     partial = AngularCorrelation(acf_params).count_auto_pairs(
-        single_data_partition, data_catalog.catalog_info
+        single_data_partition, data_catalog.catalog_info.ra_column, data_catalog.catalog_info.dec_column
     )
     assert len(partial) == len(acf_corr_bins) - 1

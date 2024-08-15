@@ -5,7 +5,6 @@ from typing import Callable, List
 
 import numpy as np
 import pandas as pd
-from munch import Munch
 
 from corrgi.utils import project_coordinates
 
@@ -15,7 +14,7 @@ class Correlation(ABC):
 
     def __init__(
         self,
-        params: Munch,
+        params: dict,
         weight_column: str = "wei",
         use_weights: bool = False,
     ):

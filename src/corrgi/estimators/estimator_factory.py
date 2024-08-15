@@ -8,14 +8,12 @@ from corrgi.estimators.natural_estimator import NaturalEstimator
 estimator_class_for_type: dict[str, type[Estimator]] = {"NAT": NaturalEstimator, "DP": DavisPeeblesEstimator}
 
 
-def get_estimator_for_correlation(correlation: Correlation, output_dir: FilePointer) -> Estimator:
+def get_estimator_for_correlation(correlation: Correlation) -> Estimator:
     """Constructs an Estimator instance for the specified correlation.
 
     Args:
         correlation (Correlation): The correlation instance. The type of
             "estimator" to use is specified in its parameters.
-        output_dir (str): The path to the directory where we save the intermediate
-            counts for the estimators (as numpy arrays).
 
     Returns:
         An initialized Estimator object wrapping the correlation to compute.
@@ -24,4 +22,4 @@ def get_estimator_for_correlation(correlation: Correlation, output_dir: FilePoin
     if type_to_use not in estimator_class_for_type:
         raise ValueError(f"Cannot load estimator type: {str(type_to_use)}")
     estimator_class = estimator_class_for_type[type_to_use]
-    return estimator_class(correlation, output_dir)
+    return estimator_class(correlation)

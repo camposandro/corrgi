@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from astropy.cosmology import LambdaCDM
 from gundam import gundam
-from hipscat.catalog.catalog_info import CatalogInfo
 from munch import Munch
 import hipscat as hc
 from corrgi.correlation.correlation import Correlation
@@ -18,8 +17,8 @@ class ProjectedCorrelation(Correlation):
         self,
         params: Munch,
         weight_column: str = "wei",
-        redshift_column: str = "z",
         use_weights: bool = False,
+        redshift_column: str = "z",
     ):
         super().__init__(params, weight_column, use_weights)
         self.redshift_column = redshift_column

@@ -54,12 +54,7 @@ def map_pixel_cross_counts(
         raise exception
 
 
-def reduce_pixel_counts(
-    reducing_keys: List[str],
-    resume_path: FilePointer,
-    output_artifact_path: str,
-    delete_resume_log_files: bool,
-):
+def reduce_pixel_counts(reducing_keys: List[str], output_artifact_path: str):
     try:
         histogram = None
         for path in reducing_keys:
@@ -67,8 +62,6 @@ def reduce_pixel_counts(
             histogram = histogram + partial_histogram if histogram is not None else partial_histogram
             del partial_histogram
         np.save(output_artifact_path, histogram)
-        if delete_resume_log_files:
-            file_io.remove_directory(resume_path, ignore_errors=True)
     except Exception as exception:  # pylint: disable=broad-exception-caught
         print_task_failure(f"Failed REDUCING stage", exception)
         raise exception

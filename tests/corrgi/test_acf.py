@@ -22,11 +22,9 @@ def test_acf_natural_counts_are_correct(
     acf_params,
     tmp_path,
 ):
-    estimator = NaturalEstimator(
-        AngularCorrelation(params=acf_params), output_dir=tmp_path
-    )
+    estimator = NaturalEstimator(AngularCorrelation(params=acf_params))
     counts_dd, counts_rr, _ = estimator.compute_autocorrelation_counts(
-        data_catalog_dir, rand_catalog_dir
+        data_catalog_dir, rand_catalog_dir, output_dir=tmp_path, client=dask_client
     )
     npt.assert_allclose(counts_dd, acf_dd_counts, rtol=1e-3)
     npt.assert_allclose(counts_rr, acf_rr_counts, rtol=2e-3)
@@ -45,6 +43,7 @@ def test_acf_natural_estimate_is_correct(
         data_catalog_dir,
         rand_catalog_dir,
         output_dir=tmp_path,
+        client=dask_client,
         corr_type=AngularCorrelation,
         params=acf_params,
     )
@@ -61,23 +60,27 @@ def test_acf_natural_counts_with_weights_are_correct(
     tmp_path,
 ):
     estimator = NaturalEstimator(
-        AngularCorrelation(params=acf_params, use_weights=True), output_dir=tmp_path
+        AngularCorrelation(params=acf_params, use_weights=True)
     )
     counts_dd, counts_rr, _ = estimator.compute_autocorrelation_counts(
-        acf_gals_weight_dir, acf_rans_weight_dir
+        acf_gals_weight_dir,
+        acf_rans_weight_dir,
+        output_dir=tmp_path,
+        client=dask_client,
     )
     npt.assert_allclose(counts_dd, acf_dd_counts_with_weights, rtol=1e-3)
     npt.assert_allclose(counts_rr, acf_rr_counts_with_weights, rtol=2e-3)
 
 
 def test_acf_weights_not_provided(
-    data_catalog_dir, rand_catalog_dir, acf_params, tmp_path
+    dask_client, data_catalog_dir, rand_catalog_dir, acf_params, tmp_path
 ):
     with pytest.raises(ValueError, match="does not exist"):
         compute_autocorrelation(
             data_catalog_dir,
             rand_catalog_dir,
             output_dir=tmp_path,
+            client=dask_client,
             corr_type=AngularCorrelation,
             params=acf_params,
             use_weights=True,

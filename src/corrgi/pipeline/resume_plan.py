@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Tuple
 
-from hipscat.io import file_io
+from hipscat.io import file_io, FilePointer
 from hipscat.pixel_math import HealpixPixel
 from hipscat_import.pipeline_resume_plan import PipelineResumePlan
 
@@ -44,7 +44,7 @@ class CorrgiResumePlan(PipelineResumePlan):
             progress_bar=args.progress_bar,
             simple_progress_bar=args.simple_progress_bar,
             tmp_path=args.tmp_path,
-            delete_resume_log_files=args.delete_resume_log_files,
+            delete_resume_log_files=False,
         )
         self.output_artifact_path = file_io.append_paths_to_pointer(
             args.output_path, f"{args.output_artifact_name}.npy"
@@ -161,7 +161,7 @@ class CorrgiResumePlan(PipelineResumePlan):
         self.touch_stage_done_file(self.REDUCING_STAGE)
 
     @classmethod
-    def get_histogram_filepath(cls, tmp_path: str, mapping_key: str):
+    def get_histogram_filepath(cls, tmp_path: FilePointer, mapping_key: str):
         """File name for writing a histogram file to a special intermediate directory."""
         file_io.make_directory(file_io.append_paths_to_pointer(tmp_path, cls.MAPPING_STAGE), exist_ok=True)
         return file_io.append_paths_to_pointer(tmp_path, cls.MAPPING_STAGE, f"{mapping_key}.npy")

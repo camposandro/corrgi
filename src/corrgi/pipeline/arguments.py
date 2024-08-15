@@ -20,9 +20,8 @@ class CorrgiArguments(RuntimeArguments):
     correlation: Correlation | None = None
     """correlation instance, with wrappers for each counting method"""
 
-    delete_resume_log_files: bool = False
-    """should we delete task-level done files once each stage is complete?
-    if False, we will keep all done marker files at the end of the pipeline."""
+    simple_progress_bar: bool = True
+    """use plain-text progress bar"""
 
     def __post_init__(self):
         self._check_arguments()

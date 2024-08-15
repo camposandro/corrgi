@@ -12,7 +12,12 @@ from corrgi.correlation.correlation import Correlation
 class AngularCorrelation(Correlation):
     """The angular correlation utilities."""
 
-    def __init__(self, params: Munch, weight_column: str = "wei", use_weights: bool = False):
+    def __init__(
+        self,
+        params: Munch,
+        weight_column: str = "wei",
+        use_weights: bool = False,
+    ):
         super().__init__(params, weight_column, use_weights)
         self.sept = self.make_bins()
 

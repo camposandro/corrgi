@@ -1,58 +1,39 @@
-"""Compute correlation using dask for parallelization
-
-Methods in this file set up a dask pipeline using futures.
-The actual logic of the map reduce is in the `map_reduce.py` file."""
+"""Compute correlation using dask for parallelization"""
 
 import numpy as np
-from dask.distributed import Client
 from hipscat.io import paths
-
 import corrgi.pipeline.map_reduce as mr
-from corrgi.pipeline.arguments import CorrgiArguments
 from corrgi.pipeline.resume_plan import CorrgiResumePlan
-
-
-def run_pipeline(args: CorrgiArguments):
-    """Pipeline that creates its own client from the provided runtime arguments"""
-    with Client(
-        local_directory=args.dask_tmp,
-        n_workers=args.dask_n_workers,
-        threads_per_worker=args.dask_threads_per_worker,
-    ) as client:
-        return run_counting(args, client)
 
 
 def run_counting(args, client):
     """Run counting of pairs in a map-reduce pipeline.
 
-    The pipeline sends a task to each worker for each left partition of the alignment
-    to perform counts on all the corresponding right catalog partitions. This reduces
-    the amount of reads and therefore the I/O overhead."""
+    This pipeline is divided into two procedures:
+    - `auto_counts`: computes counts with partitions against themselves.
+    - `cross_counts`: computes counts with partitions against every other
+    partition of the catalog (the same catalog if computing the auto-correlation,
+    a different catalog if computing the cross-correlation)."""
     resume_plan = CorrgiResumePlan(args)
-
-    # Compute the partial histograms for auto-correlation
+    # Compute counts for `auto_counts`
     if not resume_plan.is_mapping_auto_done():
-        auto_futures = get_autocorrelation_futures(args, resume_plan, client)
+        auto_futures = get_auto_futures(args, resume_plan, client)
         resume_plan.wait_for_auto_mapping(auto_futures)
-
-    # Compute the partial histograms for cross-correlation
+    # Compute counts for `cross_counts`
     if not resume_plan.is_mapping_cross_done():
-        cross_futures = get_crosscorrelation_futures(args, resume_plan, client)
+        cross_futures = get_cross_futures(args, resume_plan, client)
         resume_plan.wait_for_cross_mapping(cross_futures)
-
-    # Reduce all intermediate histograms to pixel-histograms
+    # Merge all partial histograms into a single one
     if not resume_plan.is_reducing_done():
-        reducing_future = get_reducing_future(args, resume_plan, client)
+        reducing_future = get_reducing_future(resume_plan, client)
         resume_plan.wait_for_reducing(reducing_future)
-
-    # All done - cleaning up intermediate files
-    resume_plan.clean_resume_files()
-
-    # Read the final histogram and return for further processing
+    # Return the final count for the correlation
     return np.load(resume_plan.output_artifact_path)
 
 
-def get_autocorrelation_futures(args, resume_plan, client):
+def get_auto_futures(args, resume_plan, client):
+    """Generates the features for the `auto_count` procedure. Each worker
+    is assigned a partition which it will call `count_auto_pairs` with."""
     auto_futures = []
     correlation_future = client.scatter(args.correlation)
     for pixel, mapping_key in resume_plan.get_remaining_map_auto_keys().items():
@@ -71,7 +52,10 @@ def get_autocorrelation_futures(args, resume_plan, client):
     return auto_futures
 
 
-def get_crosscorrelation_futures(args, resume_plan, client):
+def get_cross_futures(args, resume_plan, client):
+    """Generates the features for the `cross_count` procedure (catalog A) x (catalog B).
+    Each worker is assigned a partition of the left catalog (A) and a list of partitions
+    of right catalog (B) which it will call `count_cross_pairs` with."""
     cross_futures = []
     correlation_future = client.scatter(args.correlation)
     for left_pixel, (right_pixels, mapping_keys) in resume_plan.get_remaining_map_cross_keys().items():
@@ -96,11 +80,12 @@ def get_crosscorrelation_futures(args, resume_plan, client):
     return cross_futures
 
 
-def get_reducing_future(args, resume_plan, client):
+def get_reducing_future(resume_plan, client):
+    """Generates a future which will collect all the partial histograms from
+    `auto_counts` and `cross_counts` and merge them into a final count histogram.
+    The result of this step is the result of the correlation."""
     return client.submit(
         mr.reduce_pixel_counts,
         reducing_keys=resume_plan.get_reducing_keys(),
-        resume_path=resume_plan.tmp_path,
         output_artifact_path=resume_plan.output_artifact_path,
-        delete_resume_log_files=args.delete_resume_log_files,
     )

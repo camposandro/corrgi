@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import List, Tuple
+
 import hipscat as hc
 from hipscat.pixel_math import HealpixPixel
 from lsdb.dask.merge_catalog_functions import get_healpix_pixels_from_alignment
@@ -34,10 +34,11 @@ def get_auto_pixel_keys(hp_pixels) -> dict[HealpixPixel, str]:
 
 
 def filter_auto_pixel_keys(pixel_keys, done_keys) -> dict[HealpixPixel, str]:
+    """Filters out the done pixels for the auto counts"""
     return {pixel: mapping_key for pixel, mapping_key in pixel_keys.items() if mapping_key not in done_keys}
 
 
-def get_cross_pixel_keys(cross_pixels) -> dict[HealpixPixel, Tuple[List[HealpixPixel], List[str]]]:
+def get_cross_pixel_keys(cross_pixels) -> dict[HealpixPixel, tuple[list[HealpixPixel], list[str]]]:
     """Generates the full mapping of left_pixel->(right_pixels,mapping_keys)
     for a dictionary of cross pixels."""
     cross_keys = {}
@@ -53,6 +54,7 @@ def get_cross_pixel_keys(cross_pixels) -> dict[HealpixPixel, Tuple[List[HealpixP
 
 
 def filter_cross_pixel_keys(cross_keys, done_cross_keys):
+    """Filters out the done pairs of pixels for the cross counts"""
     remaining_cross_keys = {}
     for left_pixel, right_pixels_map in cross_keys.items():
         remaining_cross_pixels = [
@@ -65,7 +67,7 @@ def filter_cross_pixel_keys(cross_keys, done_cross_keys):
     return remaining_cross_keys
 
 
-def get_groups_by_left_pixel(cross_pixels) -> dict[HealpixPixel, List[HealpixPixel]]:
+def get_groups_by_left_pixel(cross_pixels) -> dict[HealpixPixel, list[HealpixPixel]]:
     """Groups a cross-alignment by pixels on the left. This way, each worker will compute the counts
     for each left pixel relative to all its matches with pixels on the right"""
     grouped = defaultdict(list)
@@ -75,4 +77,5 @@ def get_groups_by_left_pixel(cross_pixels) -> dict[HealpixPixel, List[HealpixPix
 
 
 def get_pixel_key(hp_pixel: HealpixPixel) -> str:
+    """Returns an identifier for the HEALPix pixel"""
     return f"Norder={hp_pixel.order}_Npix={hp_pixel.pixel}"

@@ -1,12 +1,13 @@
-from typing import Callable, List
+from typing import Callable
 
 import gundam.cflibfor as cff
+import hipscat as hc
 import numpy as np
 import pandas as pd
 from astropy.cosmology import LambdaCDM
 from gundam import gundam
 from munch import Munch
-import hipscat as hc
+
 from corrgi.correlation.correlation import Correlation
 
 
@@ -25,13 +26,14 @@ class ProjectedCorrelation(Correlation):
         self.sepp, self.sepv = self.make_bins()
         self.cosmo = LambdaCDM(H0=params.h0, Om0=params.omegam, Ode0=params.omegal)
 
-    def validate(self, hc_catalogs: List[hc.catalog.Catalog]):
+    def validate(self, hc_catalogs: list[hc.catalog.Catalog]):
         """Validate that the correlation args/data are valid"""
         super().validate(hc_catalogs)
         for catalog in hc_catalogs:
             if catalog.schema.field_by_name(self.redshift_column) is None:
                 raise ValueError(
-                    f"Redshift column {self.redshift_column} does not exist in {catalog.catalog_info.catalog_name}"
+                    f"Redshift column {self.redshift_column} does not"
+                    + f" exist in {catalog.catalog_info.catalog_name}"
                 )
 
     def make_bins(self) -> tuple[list]:

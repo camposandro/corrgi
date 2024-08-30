@@ -2,6 +2,7 @@
 
 import numpy as np
 from hipscat.io import paths
+
 import corrgi.pipeline.map_reduce as mr
 from corrgi.pipeline.resume_plan import CorrgiResumePlan
 

@@ -4,21 +4,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Tuple
 
-from hipscat.io import file_io, FilePointer
+from hipscat.io import FilePointer, file_io
 from hipscat.pixel_math import HealpixPixel
 from hipscat_import.pipeline_resume_plan import PipelineResumePlan
 
 from corrgi.pipeline.arguments import CorrgiArguments
 from corrgi.pipeline.utils import (
-    get_cross_pixel_keys,
-    get_auto_pixel_keys,
     filter_auto_pixel_keys,
     filter_cross_pixel_keys,
-    get_pixel_key,
-    get_cross_file_alignment,
     get_auto_file_alignment,
+    get_auto_pixel_keys,
+    get_cross_file_alignment,
+    get_cross_pixel_keys,
+    get_pixel_key,
 )
 
 
@@ -26,9 +25,9 @@ from corrgi.pipeline.utils import (
 class CorrgiResumePlan(PipelineResumePlan):
     """Container class for holding the state of each file in the pipeline plan."""
 
-    auto_pixels: List[HealpixPixel] = field(default_factory=list)
+    auto_pixels: list[HealpixPixel] = field(default_factory=list)
     """The list of partitions to compute auto counts on"""
-    cross_pixels: dict[HealpixPixel, List[HealpixPixel]] = field(default_factory=dict)
+    cross_pixels: dict[HealpixPixel, list[HealpixPixel]] = field(default_factory=dict)
     """The list of partitions to compute cross counts on"""
 
     MAPPING_STAGE = "mapping"
@@ -90,9 +89,11 @@ class CorrgiResumePlan(PipelineResumePlan):
         return self.is_mapping_auto_done() and self.is_mapping_cross_done()
 
     def is_mapping_auto_done(self) -> bool:
+        """Are there partitions for which the mapping of self-counts hasn't concluded?"""
         return self.done_file_exists(self.MAPPING_STAGE_AUTO)
 
     def is_mapping_cross_done(self) -> bool:
+        """Are there pairs of partitions for which the mapping of cross-counts hasn't concluded?"""
         return self.done_file_exists(self.MAPPING_STAGE_CROSS)
 
     @classmethod
@@ -106,17 +107,19 @@ class CorrgiResumePlan(PipelineResumePlan):
         cls.touch_key_done_file(tmp_path, cls.MAPPING_STAGE, mapping_key)
 
     def get_remaining_map_auto_keys(self) -> dict[HealpixPixel, str]:
+        """What are the pixels for each auto_counts still needs to run on"""
         done_keys = set(self.read_done_mapping_keys())
         pixel_keys = get_auto_pixel_keys(self.auto_pixels)
         return filter_auto_pixel_keys(pixel_keys, done_keys)
 
-    def get_remaining_map_cross_keys(self) -> dict[HealpixPixel, List[Tuple[HealpixPixel, str]]]:
-        """{ HP(0,2): [(HP(0,3), Norder=0_Npix=3), ...], ... }"""
+    def get_remaining_map_cross_keys(self) -> dict[HealpixPixel, list[tuple[HealpixPixel, str]]]:
+        """What are the pairs of pixels for each cross_counts still needs to run on"""
         done_keys = set(self.read_done_mapping_keys())
         pixel_keys = get_cross_pixel_keys(self.cross_pixels)
         return filter_cross_pixel_keys(pixel_keys, done_keys)
 
     def wait_for_auto_mapping(self, futures):
+        """Runs the auto_counts for all remaining partitions"""
         self.wait_for_futures(futures, self.MAPPING_STAGE_AUTO)
         remaining_pixels_to_map = self.get_remaining_map_auto_keys()
         if len(remaining_pixels_to_map) > 0:
@@ -126,6 +129,7 @@ class CorrgiResumePlan(PipelineResumePlan):
         self.touch_stage_done_file(self.MAPPING_STAGE_AUTO)
 
     def wait_for_cross_mapping(self, futures):
+        """Runs the cross_counts for all remaining pairs of partitions"""
         self.wait_for_futures(futures, self.MAPPING_STAGE_CROSS)
         remaining_pixels_to_map = self.get_remaining_map_cross_keys()
         if len(remaining_pixels_to_map) > 0:
@@ -157,7 +161,7 @@ class CorrgiResumePlan(PipelineResumePlan):
         """Wait for reducing stage futures to complete."""
         self.wait_for_futures([future], self.REDUCING_STAGE)
         if not file_io.is_regular_file(self.output_artifact_path):
-            raise RuntimeError(f"The reducing stage did not complete successfully.")
+            raise RuntimeError("The reducing stage did not complete successfully.")
         self.touch_stage_done_file(self.REDUCING_STAGE)
 
     @classmethod

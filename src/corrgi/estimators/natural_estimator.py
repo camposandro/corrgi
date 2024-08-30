@@ -4,8 +4,8 @@ import numpy as np
 from distributed import Client
 from hipscat.io import FilePointer
 
-from corrgi.pipeline.arguments import CorrgiArguments
 from corrgi.estimators.estimator import Estimator
+from corrgi.pipeline.arguments import CorrgiArguments
 from corrgi.pipeline.run_counting import run_counting
 
 

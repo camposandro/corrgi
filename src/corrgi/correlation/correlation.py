@@ -1,8 +1,9 @@
 from __future__ import annotations
-import hipscat as hc
-from abc import ABC, abstractmethod
-from typing import Callable, List
 
+from abc import ABC, abstractmethod
+from typing import Callable
+
+import hipscat as hc
 import numpy as np
 import pandas as pd
 
@@ -22,13 +23,16 @@ class Correlation(ABC):
         self.weight_column = weight_column
         self.use_weights = use_weights
 
-    def validate(self, hc_catalogs: List[hc.catalog.Catalog]):
+    def validate(self, hc_catalogs: list[hc.catalog.Catalog]):
+        """Validates the catalogs. Makes sure that if we're using weights, the
+        specified column exists in all catalogs."""
         if not self.use_weights:
             return
         for catalog in hc_catalogs:
             if catalog.schema.field_by_name(self.weight_column) is None:
                 raise ValueError(
-                    f"Weight column '{self.weight_column}' does not exist in {catalog.catalog_info.catalog_name}"
+                    f"Weight column '{self.weight_column}' does not"
+                    + f" exist in {catalog.catalog_info.catalog_name}"
                 )
 
     def count_auto_pairs(self, df: pd.DataFrame, ra_column: str, dec_column: str) -> np.ndarray:

@@ -1,6 +1,8 @@
-import hipscat as hc
+from __future__ import annotations
+
 from dataclasses import dataclass
 
+import hipscat as hc
 from hipscat.io import FilePointer
 from hipscat_import.runtime_arguments import RuntimeArguments
 

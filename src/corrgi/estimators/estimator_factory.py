@@ -1,5 +1,3 @@
-from hipscat.io import FilePointer
-
 from corrgi.correlation.correlation import Correlation
 from corrgi.estimators.davis_peebles_estimator import DavisPeeblesEstimator
 from corrgi.estimators.estimator import Estimator

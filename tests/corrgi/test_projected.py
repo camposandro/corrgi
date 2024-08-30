@@ -114,7 +114,9 @@ def test_pccf_counts_with_weights_are_correct(
     pcf_params,
     tmp_path,
 ):
-    estimator = DavisPeeblesEstimator(ProjectedCorrelation(params=pcf_params, use_weights=True))
+    estimator = DavisPeeblesEstimator(
+        ProjectedCorrelation(params=pcf_params, use_weights=True)
+    )
     counts_cd, counts_cr = estimator.compute_crosscorrelation_counts(
         pcf_gals_weight_dir,
         pcf_gals1_weight_dir,

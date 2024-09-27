@@ -21,7 +21,7 @@ def get_cross_file_alignment(left_hc_catalog: hc.catalog.Catalog, right_hc_catal
     alignment = crosscorrelation_alignment(left_hc_catalog, right_hc_catalog)
     cross_pixels = get_healpix_pixels_from_alignment(alignment)
     cross_pixels = get_groups_by_left_pixel(cross_pixels)
-    return {}, cross_pixels
+    return [], cross_pixels
 
 
 def get_auto_pixel_keys(hp_pixels) -> dict[HealpixPixel, str]:

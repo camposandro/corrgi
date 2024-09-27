@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -9,6 +11,7 @@ from hipscat.io import FilePointer, file_io
 from hipscat.pixel_math import HealpixPixel
 from hipscat_import.pipeline_resume_plan import PipelineResumePlan
 
+from corrgi.alignment import read_alignment, write_alignment
 from corrgi.pipeline.arguments import CorrgiArguments
 from corrgi.pipeline.utils import (
     filter_auto_pixel_keys,
@@ -67,11 +70,7 @@ class CorrgiResumePlan(PipelineResumePlan):
             step_progress.update(1)
 
             # Read the HiPSCat catalog's information
-            self.auto_pixels, self.cross_pixels = (
-                get_auto_file_alignment(args.left_hc_catalog)
-                if args.left_catalog_path == args.right_catalog_path
-                else get_cross_file_alignment(args.left_hc_catalog, args.right_hc_catalog)
-            )
+            self.get_alignment(args)
 
             step_progress.update(1)
 
@@ -189,3 +188,19 @@ class CorrgiResumePlan(PipelineResumePlan):
             keys = [f"{pixel_dir}/{key}" for key in done_prefixes]
             done_keys.extend(keys)
         return done_keys
+
+    def get_alignment(self, args):
+        """Read alignment from disk if it exists, or calculate it on the fly"""
+        auto_alignment_path = f"{args.tmp_path}/auto_alignment"
+        cross_alignment_path = f"{args.tmp_path}/cross_alignment"
+        if os.path.exists(auto_alignment_path) and os.path.exists(cross_alignment_path):
+            self.auto_pixels = read_alignment(auto_alignment_path)
+            self.cross_pixels = read_alignment(cross_alignment_path)
+        else:
+            self.auto_pixels, self.cross_pixels = (
+                get_auto_file_alignment(args.left_hc_catalog)
+                if args.left_catalog_path == args.right_catalog_path
+                else get_cross_file_alignment(args.left_hc_catalog, args.right_hc_catalog)
+            )
+            write_alignment(auto_alignment_path, self.auto_pixels)
+            write_alignment(cross_alignment_path, self.cross_pixels)

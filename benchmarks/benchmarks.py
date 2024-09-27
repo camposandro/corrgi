@@ -51,7 +51,9 @@ class ProjectedSuite:
 
     def time_pccf_davis_peebles_estimator(self):
         """Times the Davis-Peebles estimator for a projected cross-correlation"""
-        estimator = DavisPeeblesEstimator(ProjectedCorrelation(params=generate_pcf_params(), use_weights=True))
+        estimator = DavisPeeblesEstimator(
+            ProjectedCorrelation(params=generate_pcf_params(), use_weights=True)
+        )
         estimator.compute_crosscorrelation_counts(
             GALS_WEIGHT_DIR,
             GALS1_WEIGHT_DIR,

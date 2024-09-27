@@ -1,3 +1,4 @@
+from __future__ import annotations
 import itertools
 import pickle
 
@@ -57,6 +58,7 @@ def crosscorrelation_alignment(catalog_left: Catalog, catalog_right: Catalog) ->
     result_mapping = pd.DataFrame(full_product, columns=column_names)
     return PixelAlignment(catalog_left.pixel_tree, result_mapping, PixelAlignmentType.OUTER)
 
+
 def read_alignment(path: str) -> dict | list:
     """Reads the alignment pixels from a file.
 
@@ -70,6 +72,7 @@ def read_alignment(path: str) -> dict | list:
     """
     with open(path, "rb") as alignment_file:
         return pickle.load(alignment_file)
+
 
 def write_alignment(path: str, pixels: dict | list):
     """Writes the alignment pixels to a file.

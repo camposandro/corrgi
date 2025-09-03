@@ -1,9 +1,9 @@
 import itertools
 
 import pandas as pd
-from hipscat.catalog import Catalog
-from hipscat.pixel_tree.pixel_alignment import PixelAlignment
-from hipscat.pixel_tree.pixel_alignment_types import PixelAlignmentType
+from hats.catalog import Catalog
+from hats.pixel_tree.pixel_alignment import PixelAlignment
+from hats.pixel_tree.pixel_alignment_types import PixelAlignmentType
 
 column_names = [
     PixelAlignment.PRIMARY_ORDER_COLUMN_NAME,

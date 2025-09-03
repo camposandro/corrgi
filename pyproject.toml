@@ -1,3 +1,4 @@
+
 [project]
 name = "corrgi"
 license = {file = "LICENSE"}
@@ -15,7 +16,7 @@ classifiers = [
     "Programming Language :: Python",
 ]
 dynamic = ["version"]
-requires-python = ">=3.9, <3.12"
+requires-python = ">=3.10"
 dependencies = [
     "lsdb",
     "hats",
@@ -28,7 +29,6 @@ dependencies = [
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
 dev = [
-    "asv==0.6.3", # Used to compute performance benchmarks
     "jupyter", # Clears output from Jupyter notebooks
     "pre-commit", # Used to run checks before finalizing a git commit
     "pytest",
@@ -49,20 +49,14 @@ write_to = "src/corrgi/_version.py"
 [tool.pytest.ini_options]
 testpaths = [
     "tests",
+    "src",
+    "docs",
 ]
-
-[tool.black]
-line-length = 110
-target-version = ["py39"]
-
-[tool.isort]
-profile = "black"
-line_length = 110
+addopts = "--doctest-modules --doctest-glob=*.rst"
 
 [tool.ruff]
 line-length = 110
-target-version = "py39"
-
+target-version = "py310"
 [tool.ruff.lint]
 select = [
     # pycodestyle
@@ -91,9 +85,9 @@ select = [
     "D300",
     "D417",
     "D419",
-
+    # Numpy v2.0 compatibility
+    "NPY201",
 ]
-
 ignore = [
     "UP006", # Allow non standard library generics in type hints
     "UP007", # Allow Union in type hints
@@ -103,6 +97,7 @@ ignore = [
     "UP015", # Allow redundant open parameters
     "UP028", # Allow yield in for loop
 ]
+
 
 [tool.coverage.run]
 omit=["src/corrgi/_version.py"]

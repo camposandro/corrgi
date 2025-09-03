@@ -18,9 +18,8 @@ dynamic = ["version"]
 requires-python = ">=3.9, <3.12"
 dependencies = [
     "lsdb",
-    "hipscat",
-    "gundam",
-    "numpy<2",
+    "hats",
+    "treecorr",
 ]
 
 [project.urls]

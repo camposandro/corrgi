@@ -23,6 +23,12 @@ class CorrgiArguments(RuntimeArguments):
     simple_progress_bar: bool = True
     """use plain-text progress bar"""
 
+    corr_type: type[Corr2] | None = None
+    """the TreeCorr correlation type to use"""
+
+    corr_args: dict | None = None
+    """arguments to pass to the correlation constructor"""
+
     def __post_init__(self):
         self._check_arguments()
         self.left_catalog_path = self.left_catalog.hc_structure.catalog_path

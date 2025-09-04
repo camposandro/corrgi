@@ -1,3 +1,5 @@
+from typing import Type
+
 import lsdb
 import numpy as np
 from distributed import Client
@@ -10,7 +12,8 @@ import tempfile
 
 def compute_autocorrelation(
     catalog: lsdb.Catalog,
-    corr: Corr2,
+    corr_type: Type[Corr2],
+    corr_args: dict,
     client: Client,
 ) -> np.ndarray:
     """Compute auto-correlation given an LSDB Catalog."""
@@ -19,7 +22,8 @@ def compute_autocorrelation(
             CorrgiArguments(
                 left_catalog=catalog,
                 right_catalog=catalog,
-                correlation=corr,
+                corr_type=corr_type,
+                corr_args=corr_args,
                 output_path=tmpdir,
                 output_artifact_name="auto",
             ),
@@ -30,7 +34,8 @@ def compute_autocorrelation(
 def compute_crosscorrelation(
     left_catalog: lsdb.Catalog,
     right_catalog: lsdb.Catalog,
-    corr: Corr2,
+    corr_type: Type[Corr2],
+    corr_args: dict,
     client: Client,
 ) -> np.ndarray:
     """Compute cross-correlation given two LSDB Catalogs."""
@@ -39,7 +44,8 @@ def compute_crosscorrelation(
             CorrgiArguments(
                 left_catalog=left_catalog,
                 right_catalog=right_catalog,
-                correlation=corr,
+                corr_type=corr_type,
+                corr_args=corr_args,
                 output_path=tmpdir,
                 output_artifact_name="cross",
             ),

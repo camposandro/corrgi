@@ -1,3 +1,5 @@
+from typing import Type
+
 import numpy as np
 import pandas as pd
 import treecorr
@@ -12,13 +14,15 @@ def map_pixel_auto_counts(
     partition_file: str,
     ra_column: str,
     dec_column: str,
-    correlation: Corr2,
+    corr_type: Type[Corr2],
+    corr_args: dict,
     mapping_key: str,
     resume_path: str,
 ):
     """Computes counts in partitions for points within themselves"""
     try:
         df = pd.read_parquet(partition_file, dtype_backend="pyarrow", memory_map=True)
+        correlation = corr_type(**corr_args)
         # Compute auto-pairs using TreeCorr
         cat = treecorr.Catalog(
             ra=df[ra_column].values,
@@ -45,7 +49,8 @@ def map_pixel_cross_counts(
     left_dec_column: str,
     right_ra_column: str,
     right_dec_column: str,
-    correlation: Corr2,
+    corr_type: Type[Corr2],
+    corr_args: dict,
     mapping_keys: list[str],
     resume_path: str,
 ):
@@ -54,6 +59,7 @@ def map_pixel_cross_counts(
         left_df = file_io.read_parquet_file_to_pandas(left_partition_file)
         for right_partition, mapping_key in zip(right_partition_files, mapping_keys):
             right_df = file_io.read_parquet_file_to_pandas(right_partition)
+            correlation = corr_type(**corr_args)
             # Compute cross-pairs using TreeCorr
             cat1 = treecorr.Catalog(
                 ra=left_df[left_ra_column].values,

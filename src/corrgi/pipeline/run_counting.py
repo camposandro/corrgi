@@ -35,7 +35,6 @@ def get_auto_futures(args, resume_plan, client):
     """Generates the features for the `auto_count` procedure. Each worker is assigned
     a partition which it will call `process_auto` with."""
     auto_futures = []
-    corr_future = client.scatter(args.correlation)
     for pixel, mapping_key in resume_plan.get_remaining_map_auto_keys().items():
         partition_file = paths.pixel_catalog_file(args.left_catalog_path, pixel)
         auto_futures.append(
@@ -44,7 +43,8 @@ def get_auto_futures(args, resume_plan, client):
                 partition_file=partition_file,
                 ra_column=args.left_catalog.hc_structure.catalog_info.ra_column,
                 dec_column=args.left_catalog.hc_structure.catalog_info.dec_column,
-                correlation=corr_future,
+                corr_type=args.corr_type,
+                corr_args=args.corr_args,
                 mapping_key=mapping_key,
                 resume_path=resume_plan.tmp_path,
             )
@@ -57,7 +57,6 @@ def get_cross_futures(args, resume_plan, client):
     a partition A and a list of partitions (different from A) which it will call
     `process_cross` with."""
     cross_futures = []
-    corr_future = client.scatter(args.correlation)
     for left_pixel, (right_pixels, mapping_keys) in resume_plan.get_remaining_map_cross_keys().items():
         left_partition_file = paths.pixel_catalog_file(args.left_catalog_path, left_pixel)
         right_partition_files = [
@@ -72,7 +71,8 @@ def get_cross_futures(args, resume_plan, client):
                 left_dec_column=args.left_catalog.hc_structure.catalog_info.dec_column,
                 right_ra_column=args.right_catalog.hc_structure.catalog_info.ra_column,
                 right_dec_column=args.right_catalog.hc_structure.catalog_info.dec_column,
-                correlation=corr_future,
+                corr_type=args.corr_type,
+                corr_args=args.corr_args,
                 mapping_keys=mapping_keys,
                 resume_path=resume_plan.tmp_path,
             )

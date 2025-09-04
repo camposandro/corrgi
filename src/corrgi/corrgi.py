@@ -1,3 +1,4 @@
+import lsdb
 import numpy as np
 from distributed import Client
 from treecorr import Corr2
@@ -8,37 +9,39 @@ import tempfile
 
 
 def compute_autocorrelation(
-    catalog_path: str,
+    catalog: lsdb.Catalog,
     corr: Corr2,
     client: Client,
 ) -> np.ndarray:
+    """Compute auto-correlation given an LSDB Catalog."""
     with tempfile.TemporaryDirectory() as tmpdir:
         return run_counting(
             CorrgiArguments(
-                left_catalog_path=catalog_path,
-                right_catalog_path=catalog_path,
+                left_catalog=catalog,
+                right_catalog=catalog,
                 correlation=corr,
                 output_path=tmpdir,
-                output_artifact_name="auto_corr",
+                output_artifact_name="auto",
             ),
             client,
         )
 
 
 def compute_crosscorrelation(
-    left_catalog_path: str,
-    right_catalog_path: str,
+    left_catalog: lsdb.Catalog,
+    right_catalog: lsdb.Catalog,
     corr: Corr2,
     client: Client,
 ) -> np.ndarray:
+    """Compute cross-correlation given two LSDB Catalogs."""
     with tempfile.TemporaryDirectory() as tmpdir:
         return run_counting(
             CorrgiArguments(
-                left_catalog_path=left_catalog_path,
-                right_catalog_path=right_catalog_path,
+                left_catalog=left_catalog,
+                right_catalog=right_catalog,
                 correlation=corr,
                 output_path=tmpdir,
-                output_artifact_name="cross_corr",
+                output_artifact_name="cross",
             ),
             client,
         )

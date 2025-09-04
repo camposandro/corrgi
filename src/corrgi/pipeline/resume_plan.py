@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -10,7 +9,6 @@ from hats.io import file_io
 from hats.pixel_math import HealpixPixel
 from hats_import.pipeline_resume_plan import PipelineResumePlan
 
-from corrgi.pipeline.alignment import read_alignment, write_alignment
 from corrgi.pipeline.arguments import CorrgiArguments
 from corrgi.pipeline.utils import (
     filter_auto_pixel_keys,
@@ -21,6 +19,13 @@ from corrgi.pipeline.utils import (
     get_cross_pixel_keys,
     get_pixel_key,
 )
+
+
+def get_alignment(args: CorrgiArguments):
+    """Calculate the alignment between the catalogs"""
+    if args.left_catalog_path == args.right_catalog_path:
+        return get_auto_file_alignment(args.left_catalog.hc_structure)
+    return get_cross_file_alignment(args.left_catalog.hc_structure, args.right_catalog.hc_structure)
 
 
 @dataclass
@@ -36,9 +41,6 @@ class CorrgiResumePlan(PipelineResumePlan):
     MAPPING_STAGE_AUTO = "mapping_auto"
     MAPPING_STAGE_CROSS = "mapping_cross"
     REDUCING_STAGE = "reducing"
-
-    AUTO_ALIGNMENT_FILE = "auto_alignment"
-    CROSS_ALIGNMENT_FILE = "cross_alignment"
 
     def __init__(self, args: CorrgiArguments):
         if not args.tmp_path:  # pragma: no cover (not reachable, but required for mypy)
@@ -64,32 +66,15 @@ class CorrgiResumePlan(PipelineResumePlan):
             step_progress.update(1)
             self.check_original_input_paths([args.left_catalog_path, args.right_catalog_path])
             step_progress.update(1)
-            self.get_alignment(args)
+            self.auto_pixels, self.cross_pixels = get_alignment(args)
             step_progress.update(1)
             # Create the directories for the mapping stage
-            for pixel in args.left_hc_catalog.get_healpix_pixels():
+            for pixel in args.left_catalog.get_healpix_pixels():
                 file_io.make_directory(
                     file_io.append_paths_to_pointer(self.tmp_path, self.MAPPING_STAGE, get_pixel_key(pixel)),
                     exist_ok=True,
                 )
             step_progress.update(1)
-
-    def get_alignment(self, args: CorrgiArguments):
-        """Read alignment from disk if it exists, or calculate it on the fly"""
-        auto_alignment_path = args.tmp_path / self.AUTO_ALIGNMENT_FILE
-        cross_alignment_path = args.tmp_path / self.CROSS_ALIGNMENT_FILE
-        if os.path.exists(auto_alignment_path) and os.path.exists(cross_alignment_path):
-            self.auto_pixels = read_alignment(auto_alignment_path)
-            self.cross_pixels = read_alignment(cross_alignment_path)
-        else:
-            if args.left_catalog_path == args.right_catalog_path:
-                self.auto_pixels, self.cross_pixels = get_auto_file_alignment(args.left_hc_catalog)
-            else:
-                self.auto_pixels, self.cross_pixels = get_cross_file_alignment(
-                    args.left_hc_catalog, args.right_hc_catalog
-                )
-            write_alignment(auto_alignment_path, self.auto_pixels)
-            write_alignment(cross_alignment_path, self.cross_pixels)
 
     def is_mapping_done(self) -> bool:
         """Are there sources left to count?"""

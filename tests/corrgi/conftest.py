@@ -3,7 +3,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-import lsdb
 from dask.distributed import Client
 
 
@@ -36,18 +35,8 @@ def data_catalog_dir(hats_catalogs_dir):
 
 
 @pytest.fixture
-def data_catalog(data_catalog_dir):
-    return lsdb.open_catalog(data_catalog_dir)
-
-
-@pytest.fixture
 def rand_catalog_dir(hats_catalogs_dir):
     return hats_catalogs_dir / "RAND"
-
-
-@pytest.fixture
-def rand_catalog(rand_catalog_dir):
-    return lsdb.open_catalog(rand_catalog_dir)
 
 
 @pytest.fixture

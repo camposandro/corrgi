@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 import itertools
+import pickle
 
 import pandas as pd
 from hats.catalog import Catalog
 from hats.pixel_tree.pixel_alignment import PixelAlignment
 from hats.pixel_tree.pixel_alignment_types import PixelAlignmentType
+from upath import UPath
 
 column_names = [
     PixelAlignment.PRIMARY_ORDER_COLUMN_NAME,
@@ -55,3 +59,30 @@ def crosscorrelation_alignment(catalog_left: Catalog, catalog_right: Catalog) ->
     ]
     result_mapping = pd.DataFrame(full_product, columns=column_names)
     return PixelAlignment(catalog_left.pixel_tree, result_mapping, PixelAlignmentType.OUTER)
+
+
+def read_alignment(path: UPath) -> dict | list:
+    """Reads the alignment pixels from a file.
+
+    Args:
+        path (str): Path to the alignment file.
+
+    Returns:
+        A numpy array with the list of pixels to go into the auto_count
+        routine, or a dictionary of grouped pixels that go into the
+        cross_count routine.
+    """
+    with open(path, "rb") as alignment_file:
+        return pickle.load(alignment_file)
+
+
+def write_alignment(path: UPath, pixels: dict | list):
+    """Writes the alignment pixels to a file.
+
+    Args:
+        path (str): Path to the auto / cross alignment file.
+        pixels (list | dict): The list of pixels of the auto_count routine,
+            or the dictionary of grouped pixels of the cross_count routine.
+    """
+    with open(path, "wb") as alignment_file:
+        pickle.dump(pixels, alignment_file)
